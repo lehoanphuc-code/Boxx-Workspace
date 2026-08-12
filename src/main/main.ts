@@ -356,60 +356,62 @@ function setupIpcHandlers() {
     return app.getVersion();
   });
 
+function isVersionNewer(latest: string, current: string): boolean {
+  const parse = (v: string) => v.split('.').map((n) => parseInt(n, 10) || 0);
+  const l = parse(latest);
+  const c = parse(current);
+  for (let i = 0; i < Math.max(l.length, c.length); i++) {
+    const numL = l[i] || 0;
+    const numC = c[i] || 0;
+    if (numL > numC) return true;
+    if (numL < numC) return false;
+  }
+  return false;
+}
+
   // Auto Updater Handlers
   ipcMain.handle('check-for-updates', async () => {
     const currentVersion = app.getVersion();
     mainWindow?.webContents.send('auto-update-status', { status: 'checking' });
 
-    // Direct GitHub Release API check for 100% accurate status
     try {
       const https = require('https');
-      const req = https.get('https://api.github.com/repos/lehoanphuc-code/Boxx-Workspace/releases/latest', {
-        headers: { 'User-Agent': 'Boxx-App' }
+      const req = https.request('https://github.com/lehoanphuc-code/Boxx-Workspace/releases/latest', {
+        method: 'HEAD',
+        headers: { 'User-Agent': 'Mozilla/5.0' }
       }, (res: any) => {
-        let data = '';
-        res.on('data', (chunk: any) => data += chunk);
-        res.on('end', () => {
-          try {
-            const release = JSON.parse(data);
-            const rawTag = release.tag_name || '';
-            const latestVersion = rawTag.replace(/^v/, '').trim();
+        const redirectUrl = res.headers.location || '';
+        const match = redirectUrl.match(/\/tag\/v?([0-9.]+)/);
+        const latestVersion = match ? match[1] : '';
 
-            if (latestVersion && latestVersion !== currentVersion) {
-              mainWindow?.webContents.send('auto-update-status', {
-                status: 'available',
-                version: latestVersion,
-                message: `🎉 Phát hiện phiên bản mới v${latestVersion} trên GitHub!`
-              });
-              if (app.isPackaged) {
-                autoUpdater.checkForUpdates().catch(() => {});
-              }
-            } else {
-              mainWindow?.webContents.send('auto-update-status', {
-                status: 'latest',
-                version: currentVersion,
-                message: `✅ Bạn đang sử dụng phiên bản mới nhất (v${currentVersion})!`
-              });
-            }
-          } catch {
-            mainWindow?.webContents.send('auto-update-status', {
-              status: 'latest',
-              version: currentVersion,
-              message: `✅ Bạn đang sử dụng phiên bản mới nhất (v${currentVersion})!`
-            });
+        if (latestVersion && isVersionNewer(latestVersion, currentVersion)) {
+          mainWindow?.webContents.send('auto-update-status', {
+            status: 'available',
+            version: latestVersion,
+            message: `🎉 Đã tìm thấy phiên bản mới v${latestVersion} trên GitHub!`
+          });
+          if (app.isPackaged) {
+            autoUpdater.checkForUpdates().catch(() => {});
           }
-        });
+        } else {
+          mainWindow?.webContents.send('auto-update-status', {
+            status: 'latest',
+            version: currentVersion,
+            message: `✅ Bạn đang sử dụng phiên bản mới nhất (v${currentVersion})!`
+          });
+        }
       });
 
-      req.on('error', () => {
+      req.on('error', (err: any) => {
+        console.error('Check update error:', err);
         mainWindow?.webContents.send('auto-update-status', {
           status: 'latest',
           version: currentVersion,
           message: `✅ Bạn đang sử dụng phiên bản mới nhất (v${currentVersion})!`
         });
       });
-      req.end();
 
+      req.end();
       return { status: 'checking' };
     } catch (err: any) {
       mainWindow?.webContents.send('auto-update-status', {

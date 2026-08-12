@@ -507,10 +507,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   {updateCheckStatus === 'ready' ? (
                     <button
                       onClick={() => window.electronAPI?.restartAndInstallUpdate()}
-                      className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-emerald-600/30 flex items-center gap-1.5"
+                      className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-emerald-600/30 flex items-center gap-1.5 animate-pulse"
                     >
                       <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                       Khởi chạy lại & Cập nhật
+                    </button>
+                  ) : updateCheckStatus === 'available' ? (
+                    <button
+                      onClick={() => window.electronAPI?.openExternalLink('https://github.com/lehoanphuc-code/Boxx-Workspace/releases/latest/download/Boxx-Workspace.exe')}
+                      className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-emerald-600/30 flex items-center gap-1.5"
+                    >
+                      🚀 Tải Cập nhật (.EXE)
                     </button>
                   ) : (
                     <button
