@@ -95,38 +95,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const handleManualCheckForUpdates = async () => {
     setIsCheckingUpdate(true);
     setUpdateCheckStatus('checking');
-    setUpdateCheckMessage('Đang kiểm tra bản cập nhật mới trên GitHub...');
+    setUpdateCheckMessage('Đang kết nối GitHub Releases để kiểm tra bản mới...');
 
     try {
       if (window.electronAPI?.checkForUpdates) {
-        const res = await window.electronAPI.checkForUpdates();
-        if (res && res.error) {
-          setUpdateCheckStatus('error');
-          setUpdateCheckMessage('✅ Bạn đang sử dụng phiên bản mới nhất!');
-          setIsCheckingUpdate(false);
-        } else {
-          setTimeout(() => {
-            setIsCheckingUpdate((prev) => {
-              if (prev) {
-                setUpdateCheckStatus('latest');
-                setUpdateCheckMessage('✅ Bạn đang sử dụng phiên bản mới nhất!');
-                return false;
-              }
-              return false;
-            });
-          }, 2500);
-        }
-      } else {
-        setTimeout(() => {
-          setIsCheckingUpdate(false);
-          setUpdateCheckStatus('latest');
-          setUpdateCheckMessage('✅ Bạn đang sử dụng phiên bản mới nhất!');
-        }, 1500);
+        await window.electronAPI.checkForUpdates();
       }
-    } catch (err) {
+      setTimeout(() => {
+        setIsCheckingUpdate((prev) => {
+          if (prev) {
+            setUpdateCheckStatus('latest');
+            setUpdateCheckMessage('✅ Bạn đang sử dụng phiên bản mới nhất!');
+            return false;
+          }
+          return false;
+        });
+      }, 3000);
+    } catch (err: any) {
       setIsCheckingUpdate(false);
-      setUpdateCheckStatus('latest');
-      setUpdateCheckMessage('✅ Bạn đang sử dụng phiên bản mới nhất!');
+      setUpdateCheckStatus('error');
+      setUpdateCheckMessage('❌ Không thể kết nối server cập nhật.');
     }
   };
 

@@ -358,15 +358,15 @@ function setupIpcHandlers() {
 
   // Auto Updater Handlers
   ipcMain.handle('check-for-updates', async () => {
-    if (app.isPackaged) {
-      try {
-        return await autoUpdater.checkForUpdates();
-      } catch (err: any) {
-        console.error('Error checking for updates:', err);
-        return { error: err.message };
-      }
+    try {
+      mainWindow?.webContents.send('auto-update-status', { status: 'checking' });
+      const res = await autoUpdater.checkForUpdates();
+      return res;
+    } catch (err: any) {
+      console.error('Error checking for updates:', err);
+      mainWindow?.webContents.send('auto-update-status', { status: 'error', message: err?.message || 'Lỗi kết nối server cập nhật' });
+      return { error: err?.message || 'Lỗi kết nối server cập nhật' };
     }
-    return null;
   });
 
   ipcMain.handle('restart-and-install-update', () => {
@@ -491,6 +491,7 @@ app.whenReady().then(() => {
   createWindow();
 
   // Configure autoUpdater for GitHub Releases
+  autoUpdater.forceDevUpdateConfig = true;
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
 
