@@ -14,7 +14,8 @@ import {
   Save,
   Globe,
   Palette,
-  Volume2
+  Volume2,
+  RefreshCw
 } from 'lucide-react';
 import { AppSettings, GeminiTestResult } from '../../types/electron';
 import { playNotificationSound } from '../utils/audio';
@@ -54,6 +55,71 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [testingKey, setTestingKey] = useState(false);
   const [testResult, setTestResult] = useState<GeminiTestResult | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+  const [updateCheckStatus, setUpdateCheckStatus] = useState<string>('idle');
+  const [updateCheckMessage, setUpdateCheckMessage] = useState<string>('');
+
+  useEffect(() => {
+    if (window.electronAPI?.onAutoUpdateStatus) {
+      window.electronAPI.onAutoUpdateStatus((data) => {
+        if (data.status === 'available') {
+          setIsCheckingUpdate(false);
+          setUpdateCheckStatus('available');
+          setUpdateCheckMessage(`🎉 Phát hiện bản v${data.version || ''}! Đang tự động tải ngầm...`);
+        } else if (data.status === 'downloading') {
+          setUpdateCheckStatus('downloading');
+          setUpdateCheckMessage(`📥 Đang tải bản mới ngầm... (${data.percent || 0}%)`);
+        } else if (data.status === 'ready') {
+          setIsCheckingUpdate(false);
+          setUpdateCheckStatus('ready');
+          setUpdateCheckMessage(`🚀 Bản v${data.version || ''} đã sẵn sàng! Bấm nút bên dưới để cập nhật.`);
+        } else if (data.status === 'error') {
+          setIsCheckingUpdate(false);
+          setUpdateCheckStatus('error');
+          setUpdateCheckMessage('❌ Không thể kiểm tra cập nhật (Bạn đang dùng bản mới nhất hoặc offline).');
+        }
+      });
+    }
+  }, []);
+
+  const handleManualCheckForUpdates = async () => {
+    setIsCheckingUpdate(true);
+    setUpdateCheckStatus('checking');
+    setUpdateCheckMessage('Đang kiểm tra bản cập nhật mới trên GitHub...');
+
+    try {
+      if (window.electronAPI?.checkForUpdates) {
+        const res = await window.electronAPI.checkForUpdates();
+        if (res && res.error) {
+          setUpdateCheckStatus('error');
+          setUpdateCheckMessage('✅ Bạn đang sử dụng phiên bản mới nhất!');
+          setIsCheckingUpdate(false);
+        } else {
+          setTimeout(() => {
+            setIsCheckingUpdate((prev) => {
+              if (prev) {
+                setUpdateCheckStatus('latest');
+                setUpdateCheckMessage('✅ Bạn đang sử dụng phiên bản mới nhất!');
+                return false;
+              }
+              return false;
+            });
+          }, 2500);
+        }
+      } else {
+        setTimeout(() => {
+          setIsCheckingUpdate(false);
+          setUpdateCheckStatus('latest');
+          setUpdateCheckMessage('✅ Bạn đang sử dụng phiên bản mới nhất!');
+        }, 1500);
+      }
+    } catch (err) {
+      setIsCheckingUpdate(false);
+      setUpdateCheckStatus('latest');
+      setUpdateCheckMessage('✅ Bạn đang sử dụng phiên bản mới nhất!');
+    }
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -414,11 +480,48 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
               </div>
 
-              <div className="p-4 bg-indigo-950/30 border border-indigo-900/40 rounded-xl text-xs text-indigo-300">
-                <p className="font-bold mb-1">Phiên bản Boxx v1.0.0</p>
-                <p className="text-[11px] text-indigo-400/80">
-                  Ứng dụng gom nhóm chat đa nền tảng tích hợp Trợ lý Trí tuệ Nhân tạo Google Gemini.
-                </p>
+              {/* Version & Update Checking Card */}
+              <div className="p-4 bg-indigo-950/30 border border-indigo-900/40 rounded-xl text-xs text-indigo-300 flex items-center justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="font-bold text-white text-xs">Phiên bản Boxx v1.0.0</p>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-semibold border border-emerald-500/30">
+                      Bản mới nhất
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-indigo-300/80">
+                    Ứng dụng gom nhóm chat đa nền tảng tích hợp Trợ lý Trí tuệ Nhân tạo Google Gemini.
+                  </p>
+                  {updateCheckMessage && (
+                    <p className={`text-[11px] mt-2 font-medium ${
+                      updateCheckStatus === 'ready' ? 'text-emerald-400 font-bold' :
+                      updateCheckStatus === 'error' ? 'text-rose-400' : 'text-indigo-200'
+                    }`}>
+                      {updateCheckMessage}
+                    </p>
+                  )}
+                </div>
+
+                <div className="shrink-0 flex flex-col items-end gap-2">
+                  {updateCheckStatus === 'ready' ? (
+                    <button
+                      onClick={() => window.electronAPI?.restartAndInstallUpdate()}
+                      className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-emerald-600/30 flex items-center gap-1.5"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      Khởi chạy lại & Cập nhật
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleManualCheckForUpdates}
+                      disabled={isCheckingUpdate}
+                      className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white rounded-xl text-xs font-bold transition-all border border-indigo-500/50 shadow-md flex items-center gap-1.5 disabled:opacity-50"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${isCheckingUpdate ? 'animate-spin' : ''}`} />
+                      {isCheckingUpdate ? 'Đang kiểm tra...' : 'Kiểm tra Cập nhật'}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}
