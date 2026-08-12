@@ -301,19 +301,30 @@ function applyCleanHeadersToSession(ses: Electron.Session) {
 // Helper to open link in preferred external browser
 function openUrlInPreferredBrowser(url: string) {
   if (!url || typeof url !== 'string') return;
+  const cleanUrl = url.trim();
+  if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) return;
+
   const settings = loadSettings();
   const browser = settings.preferredBrowser || 'default';
-  const cleanUrl = url.trim();
 
   try {
+    const { execFile } = require('child_process');
     if (browser === 'msedge') {
-      exec(`start msedge "${cleanUrl}"`);
+      execFile('cmd.exe', ['/c', 'start', '', 'msedge', cleanUrl], (err: any) => {
+        if (err) shell.openExternal(cleanUrl);
+      });
     } else if (browser === 'chrome') {
-      exec(`start chrome "${cleanUrl}"`);
+      execFile('cmd.exe', ['/c', 'start', '', 'chrome', cleanUrl], (err: any) => {
+        if (err) shell.openExternal(cleanUrl);
+      });
     } else if (browser === 'firefox') {
-      exec(`start firefox "${cleanUrl}"`);
+      execFile('cmd.exe', ['/c', 'start', '', 'firefox', cleanUrl], (err: any) => {
+        if (err) shell.openExternal(cleanUrl);
+      });
     } else if (browser === 'brave') {
-      exec(`start brave "${cleanUrl}"`);
+      execFile('cmd.exe', ['/c', 'start', '', 'brave', cleanUrl], (err: any) => {
+        if (err) shell.openExternal(cleanUrl);
+      });
     } else {
       shell.openExternal(cleanUrl);
     }

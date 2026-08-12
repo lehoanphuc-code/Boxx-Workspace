@@ -324,8 +324,38 @@ export const WebviewContainer: React.FC<WebviewContainerProps> = ({
       }
     };
 
+    const handleNewWindow = (e: any) => {
+      const url = e.url;
+      if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+        e.preventDefault();
+        if (window.electronAPI && typeof window.electronAPI.openExternalLink === 'function') {
+          window.electronAPI.openExternalLink(url);
+        }
+      }
+    };
+
+    const handleWillNavigate = (e: any) => {
+      const url = e.url;
+      if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) return;
+      const targetService = services.find((s) => s.id === serviceId);
+      if (!targetService) return;
+
+      try {
+        const targetHost = new URL(url).hostname;
+        const serviceHost = new URL(targetService.url).hostname;
+        const cleanServiceHost = serviceHost.replace(/^(web|chat|app)\./, '');
+
+        if (!targetHost.includes(cleanServiceHost)) {
+          e.preventDefault();
+          if (window.electronAPI && typeof window.electronAPI.openExternalLink === 'function') {
+            window.electronAPI.openExternalLink(url);
+          }
+        }
+      } catch {}
+    };
+
     const handleDomReady = () => {
-      // Auto-grant HTML5 Notification permissions & Intercept 100% of link clicks in webview
+      // Auto-grant HTML5 Notification permissions & Intercept link clicks in webview
       el.executeJavaScript(`
         (function() {
           try {
@@ -346,9 +376,7 @@ export const WebviewContainer: React.FC<WebviewContainerProps> = ({
                 if (anchor.target === '_blank' || isExternal) {
                   e.preventDefault();
                   e.stopPropagation();
-                  if (window.electronAPI && typeof window.electronAPI.openExternalLink === 'function') {
-                    window.electronAPI.openExternalLink(href);
-                  }
+                  window.open(href, '_blank');
                 }
               }, true);
             }
@@ -362,6 +390,12 @@ export const WebviewContainer: React.FC<WebviewContainerProps> = ({
 
     el.removeEventListener('dom-ready', handleDomReady);
     el.addEventListener('dom-ready', handleDomReady);
+
+    el.removeEventListener('new-window', handleNewWindow);
+    el.addEventListener('new-window', handleNewWindow);
+
+    el.removeEventListener('will-navigate', handleWillNavigate);
+    el.addEventListener('will-navigate', handleWillNavigate);
   };
 
   const activeServiceObj = services.find((s) => s.id === activeServiceId);
