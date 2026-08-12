@@ -1,0 +1,9 @@
+node_modules
+dist
+dist-electron
+dist_app
+dist_build
+dist_single_exe
+release
+*.log
+.DS_Store

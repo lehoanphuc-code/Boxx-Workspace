@@ -1,0 +1,70 @@
+{
+  "name": "boxx",
+  "version": "1.0.0",
+  "description": "Boxx - All-in-One Multi-Chat Workspace with Google Gemini AI Copilot",
+  "main": "main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build && tsc -p tsconfig.electron.json",
+    "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && tsc -p tsconfig.electron.json && electron .\"",
+    "electron:build": "npm run build && npx electron-packager . \"Boxx Workspace\" --platform=win32 --arch=x64 --out=dist_build --overwrite"
+  },
+  "keywords": [
+    "chat",
+    "workspace",
+    "messenger",
+    "zalo",
+    "telegram",
+    "whatsapp",
+    "teams",
+    "gemini",
+    "ai"
+  ],
+  "author": "Antigravity",
+  "license": "MIT",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.0",
+    "clsx": "^2.1.1",
+    "electron-updater": "^6.8.9",
+    "lucide-react": "^0.475.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^3.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.4",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.1.2",
+    "electron": "^34.2.0",
+    "electron-builder": "^26.15.3",
+    "postcss": "^8.5.2",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.3",
+    "vite": "^6.1.0",
+    "wait-on": "^8.0.2"
+  },
+  "build": {
+    "appId": "com.antigravity.boxx",
+    "productName": "Boxx Workspace",
+    "directories": {
+      "output": "dist_single_exe"
+    },
+    "files": [
+      "main.js",
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "portable"
+      ]
+    },
+    "portable": {
+      "artifactName": "Boxx-Workspace.exe"
+    }
+  }
+}
