@@ -59,6 +59,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   const [updateCheckStatus, setUpdateCheckStatus] = useState<string>('idle');
   const [updateCheckMessage, setUpdateCheckMessage] = useState<string>('');
+  const [appVersion, setAppVersion] = useState<string>('1.0.1');
+
+  useEffect(() => {
+    if (window.electronAPI?.getAppVersion) {
+      window.electronAPI.getAppVersion().then((v) => {
+        if (v) setAppVersion(v);
+      });
+    }
+  }, []);
 
   useEffect(() => {
     if (window.electronAPI?.onAutoUpdateStatus) {
@@ -484,7 +493,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <div className="p-4 bg-indigo-950/30 border border-indigo-900/40 rounded-xl text-xs text-indigo-300 flex items-center justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <p className="font-bold text-white text-xs">Phiên bản Boxx v1.0.0</p>
+                    <p className="font-bold text-white text-xs">Phiên bản Boxx v{appVersion}</p>
                     <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-semibold border border-emerald-500/30">
                       Bản mới nhất
                     </span>

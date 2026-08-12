@@ -1,6 +1,6 @@
 {
   "name": "boxx",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Boxx - All-in-One Multi-Chat Workspace with Google Gemini AI Copilot",
   "main": "main.js",
   "scripts": {

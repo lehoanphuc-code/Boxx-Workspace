@@ -54,6 +54,7 @@ export interface ElectronAPI {
   saveTasks: (tasks: TaskItem[]) => Promise<boolean>;
   selectFile: () => Promise<string[] | null>;
   openExternalLink: (url: string) => Promise<boolean>;
+  getAppVersion: () => Promise<string>;
   checkForUpdates: () => Promise<any>;
   restartAndInstallUpdate: () => Promise<void>;
   onAutoUpdateStatus: (callback: (data: UpdateStatus) => void) => void;

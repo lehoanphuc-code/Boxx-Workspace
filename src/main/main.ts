@@ -351,6 +351,11 @@ function setupIpcHandlers() {
     return true;
   });
 
+  // Get App Version
+  ipcMain.handle('get-app-version', () => {
+    return app.getVersion();
+  });
+
   // Auto Updater Handlers
   ipcMain.handle('check-for-updates', async () => {
     if (app.isPackaged) {

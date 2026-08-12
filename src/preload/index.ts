@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveTasks: (tasks: any[]) => ipcRenderer.invoke('save-tasks', tasks),
   selectFile: () => ipcRenderer.invoke('select-file'),
   openExternalLink: (url: string) => ipcRenderer.invoke('open-external-link', url),
+  getAppVersion: () => ipcRenderer.invoke('get-app-version'),
   checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
   restartAndInstallUpdate: () => ipcRenderer.invoke('restart-and-install-update'),
   onAutoUpdateStatus: (callback: Function) => {
