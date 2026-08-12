@@ -52,10 +52,11 @@
 
 ### 👤 Dành cho Người dùng Cuối (End Users)
 
-👉 **[📥 TẢI NGAY BOXX WORKSPACE (BẢN MỚI NHẤT)](https://github.com/lehoanphuc-code/Boxx-Workspace/releases/latest)**
+👉 **[📥 TẢI NGAY FILE BOXX-WORKSPACE.EXE (CLICK LÀ TẢI TRỰC TIẾP)](https://github.com/lehoanphuc-code/Boxx-Workspace/releases/latest/download/Boxx-Workspace.exe)**
 
-1. Click vào đường dẫn **[Tải ngay Boxx Workspace](https://github.com/lehoanphuc-code/Boxx-Workspace/releases/latest)** ở trên để tự động tải về phiên bản mới nhất.
-2. Giải nén file `.zip` vừa tải về và click đúp vào **`Boxx Workspace.exe`** để mở ứng dụng và sử dụng ngay (không cần cài đặt).
+1. Click vào đường dẫn **[Tải ngay file Boxx-Workspace.exe](https://github.com/lehoanphuc-code/Boxx-Workspace/releases/latest/download/Boxx-Workspace.exe)** ở trên.
+2. Trình duyệt sẽ **tự động tải trực tiếp file `Boxx-Workspace.exe`** về máy tính của bạn (không mở trang trung gian, không cần giải nén file zip).
+3. Click đúp vào file **`Boxx-Workspace.exe`** vừa tải về để sử dụng ngay!
 
 ---
 
