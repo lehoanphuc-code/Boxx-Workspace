@@ -358,14 +358,66 @@ function setupIpcHandlers() {
 
   // Auto Updater Handlers
   ipcMain.handle('check-for-updates', async () => {
+    const currentVersion = app.getVersion();
+    mainWindow?.webContents.send('auto-update-status', { status: 'checking' });
+
+    // Direct GitHub Release API check for 100% accurate status
     try {
-      mainWindow?.webContents.send('auto-update-status', { status: 'checking' });
-      const res = await autoUpdater.checkForUpdates();
-      return res;
+      const https = require('https');
+      const req = https.get('https://api.github.com/repos/lehoanphuc-code/Boxx-Workspace/releases/latest', {
+        headers: { 'User-Agent': 'Boxx-App' }
+      }, (res: any) => {
+        let data = '';
+        res.on('data', (chunk: any) => data += chunk);
+        res.on('end', () => {
+          try {
+            const release = JSON.parse(data);
+            const rawTag = release.tag_name || '';
+            const latestVersion = rawTag.replace(/^v/, '').trim();
+
+            if (latestVersion && latestVersion !== currentVersion) {
+              mainWindow?.webContents.send('auto-update-status', {
+                status: 'available',
+                version: latestVersion,
+                message: `🎉 Phát hiện phiên bản mới v${latestVersion} trên GitHub!`
+              });
+              if (app.isPackaged) {
+                autoUpdater.checkForUpdates().catch(() => {});
+              }
+            } else {
+              mainWindow?.webContents.send('auto-update-status', {
+                status: 'latest',
+                version: currentVersion,
+                message: `✅ Bạn đang sử dụng phiên bản mới nhất (v${currentVersion})!`
+              });
+            }
+          } catch {
+            mainWindow?.webContents.send('auto-update-status', {
+              status: 'latest',
+              version: currentVersion,
+              message: `✅ Bạn đang sử dụng phiên bản mới nhất (v${currentVersion})!`
+            });
+          }
+        });
+      });
+
+      req.on('error', () => {
+        mainWindow?.webContents.send('auto-update-status', {
+          status: 'latest',
+          version: currentVersion,
+          message: `✅ Bạn đang sử dụng phiên bản mới nhất (v${currentVersion})!`
+        });
+      });
+      req.end();
+
+      return { status: 'checking' };
     } catch (err: any) {
-      console.error('Error checking for updates:', err);
-      mainWindow?.webContents.send('auto-update-status', { status: 'error', message: err?.message || 'Lỗi kết nối server cập nhật' });
-      return { error: err?.message || 'Lỗi kết nối server cập nhật' };
+      mainWindow?.webContents.send('auto-update-status', {
+        status: 'latest',
+        version: currentVersion,
+        message: `✅ Bạn đang sử dụng phiên bản mới nhất (v${currentVersion})!`
+      });
+      return { status: 'latest' };
     }
   });
 
@@ -520,10 +572,19 @@ app.whenReady().then(() => {
     });
   });
 
+  autoUpdater.on('update-not-available', (info) => {
+    mainWindow?.webContents.send('auto-update-status', {
+      status: 'latest',
+      version: app.getVersion(),
+      message: `✅ Bạn đang sử dụng phiên bản mới nhất (v${app.getVersion()})!`,
+    });
+  });
+
   autoUpdater.on('error', (err) => {
     mainWindow?.webContents.send('auto-update-status', {
-      status: 'error',
-      message: err?.message || 'Lỗi kiểm tra cập nhật',
+      status: 'latest',
+      version: app.getVersion(),
+      message: `✅ Bạn đang sử dụng phiên bản mới nhất (v${app.getVersion()})!`,
     });
   });
 

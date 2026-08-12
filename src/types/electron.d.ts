@@ -36,7 +36,7 @@ export interface GeminiTestResult {
 }
 
 export interface UpdateStatus {
-  status: 'checking' | 'available' | 'downloading' | 'ready' | 'error';
+  status: 'checking' | 'available' | 'downloading' | 'ready' | 'latest' | 'error';
   version?: string;
   percent?: number;
   message?: string;

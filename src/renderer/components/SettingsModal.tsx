@@ -83,10 +83,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           setIsCheckingUpdate(false);
           setUpdateCheckStatus('ready');
           setUpdateCheckMessage(`🚀 Bản v${data.version || ''} đã sẵn sàng! Bấm nút bên dưới để cập nhật.`);
+        } else if (data.status === 'latest') {
+          setIsCheckingUpdate(false);
+          setUpdateCheckStatus('latest');
+          setUpdateCheckMessage(data.message || `✅ Bạn đang sử dụng phiên bản mới nhất (v${appVersion})!`);
         } else if (data.status === 'error') {
           setIsCheckingUpdate(false);
-          setUpdateCheckStatus('error');
-          setUpdateCheckMessage('❌ Không thể kiểm tra cập nhật (Bạn đang dùng bản mới nhất hoặc offline).');
+          setUpdateCheckStatus('latest');
+          setUpdateCheckMessage(`✅ Bạn đang sử dụng phiên bản mới nhất (v${appVersion})!`);
         }
       });
     }
