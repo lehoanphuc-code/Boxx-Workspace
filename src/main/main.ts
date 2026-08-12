@@ -221,23 +221,15 @@ function applyCleanHeadersToSession(ses: Electron.Session) {
 
   applyCleanHeadersToSession(session.defaultSession);
 
-  const AUTH_DOMAINS = [
-    'teams.microsoft.com',
-    'teams.live.com',
+  const STRICT_AUTH_DOMAINS = [
+    'accounts.google.com',
     'login.microsoftonline.com',
     'login.live.com',
-    'microsoft.com',
-    'facebook.com',
-    'messenger.com',
-    'zalo.me',
-    'telegram.org',
-    'whatsapp.com',
-    'google.com',
-    'accounts.google.com',
-    'chatgpt.com',
-    'openai.com',
-    'gemini.google.com',
-    'transfer.it',
+    'appleid.apple.com',
+    'auth.zalo.me',
+    'id.zalo.me',
+    'facebook.com/login',
+    'm.facebook.com/login',
   ];
 
   // Set User-Agent & Client Hints for webview partitions when created
@@ -272,20 +264,61 @@ function applyCleanHeadersToSession(ses: Electron.Session) {
       // Handle window open (e.g. popups / auth links / external link clicks) inside webview
       contents.setWindowOpenHandler(({ url }) => {
         try {
+          let targetUrl = url;
           const parsedUrl = new URL(url);
-          const isAuthOrService = AUTH_DOMAINS.some(
-            (domain) => parsedUrl.hostname === domain || parsedUrl.hostname.endsWith('.' + domain)
+
+          // Unwrap Zalo, Facebook, Google link wrapper redirects
+          const searchParams = parsedUrl.searchParams;
+          const rawTarget = searchParams.get('u') || searchParams.get('url') || searchParams.get('q') || searchParams.get('target');
+          if (rawTarget && (rawTarget.startsWith('http://') || rawTarget.startsWith('https://'))) {
+            targetUrl = rawTarget;
+          }
+
+          const isStrictAuth = STRICT_AUTH_DOMAINS.some(
+            (domain) => parsedUrl.hostname === domain || parsedUrl.hostname.endsWith('.' + domain) || (parsedUrl.hostname + parsedUrl.pathname).includes(domain)
           );
 
-          if (isAuthOrService) {
+          if (isStrictAuth) {
             return { action: 'allow' };
           }
 
-          openUrlInPreferredBrowser(url);
+          openUrlInPreferredBrowser(targetUrl);
           return { action: 'deny' };
         } catch {
+          openUrlInPreferredBrowser(url);
           return { action: 'deny' };
         }
+      });
+
+      // Catch webview navigation away from service base host
+      contents.on('will-navigate', (event, url) => {
+        try {
+          if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) return;
+          let targetUrl = url;
+          const parsedUrl = new URL(url);
+
+          // Unwrap Zalo, Facebook, Google link wrapper redirects
+          const searchParams = parsedUrl.searchParams;
+          const rawTarget = searchParams.get('u') || searchParams.get('url') || searchParams.get('q') || searchParams.get('target');
+          if (rawTarget && (rawTarget.startsWith('http://') || rawTarget.startsWith('https://'))) {
+            targetUrl = rawTarget;
+          }
+
+          const isStrictAuth = STRICT_AUTH_DOMAINS.some(
+            (domain) => parsedUrl.hostname === domain || parsedUrl.hostname.endsWith('.' + domain) || (parsedUrl.hostname + parsedUrl.pathname).includes(domain)
+          );
+
+          if (!isStrictAuth) {
+            // Check if navigating to an external page
+            const serviceDomains = ['chat.zalo.me', 'messenger.com', 'facebook.com', 'web.telegram.org', 'web.whatsapp.com', 'teams.microsoft.com', 'chatgpt.com', 'gemini.google.com', 'mail.google.com', 'transfer.it'];
+            const isMainServiceHost = serviceDomains.some(sd => parsedUrl.hostname.includes(sd));
+            
+            if (!isMainServiceHost || searchParams.has('u') || searchParams.has('url') || searchParams.has('q')) {
+              event.preventDefault();
+              openUrlInPreferredBrowser(targetUrl);
+            }
+          }
+        } catch {}
       });
     }
   });
