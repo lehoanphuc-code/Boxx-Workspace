@@ -354,6 +354,18 @@ export const WebviewContainer: React.FC<WebviewContainerProps> = ({
       } catch {}
     };
 
+    const handleConsoleMessage = (e: any) => {
+      const msg = e.message || '';
+      if (msg.startsWith('__BOXX_OPEN_EXTERNAL__:')) {
+        const url = msg.substring('__BOXX_OPEN_EXTERNAL__:'.length).trim();
+        if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+          if (window.electronAPI && typeof window.electronAPI.openExternalLink === 'function') {
+            window.electronAPI.openExternalLink(url);
+          }
+        }
+      }
+    };
+
     const handleDomReady = () => {
       // Auto-grant HTML5 Notification permissions & Intercept link clicks in webview
       el.executeJavaScript(`
@@ -366,17 +378,36 @@ export const WebviewContainer: React.FC<WebviewContainerProps> = ({
 
             if (!window.__boxx_link_listener_attached) {
               window.__boxx_link_listener_attached = true;
+
+              // 1. Override window.open inside webview
+              const origOpen = window.open;
+              window.open = function(url, target, features) {
+                if (url && typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'))) {
+                  console.log('__BOXX_OPEN_EXTERNAL__:' + url);
+                  return null;
+                }
+                return origOpen ? origOpen.apply(this, arguments) : null;
+              };
+
+              // 2. Global capture click listener for <a> tags
               document.addEventListener('click', function(e) {
                 const anchor = e.target ? e.target.closest('a') : null;
                 if (!anchor) return;
-                const href = anchor.href;
+                const href = anchor.href || anchor.getAttribute('href');
                 if (!href || href.startsWith('javascript:') || href.startsWith('#')) return;
 
-                const isExternal = !href.includes(window.location.hostname);
-                if (anchor.target === '_blank' || isExternal) {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  window.open(href, '_blank');
+                try {
+                  const targetHost = new URL(href).hostname;
+                  const currentHost = window.location.hostname;
+                  const cleanCurrent = currentHost.replace(/^(web|chat|app)\./, '');
+
+                  if (!targetHost.includes(cleanCurrent) || anchor.target === '_blank') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('__BOXX_OPEN_EXTERNAL__:' + href);
+                  }
+                } catch(err) {
+                  console.log('__BOXX_OPEN_EXTERNAL__:' + href);
                 }
               }, true);
             }
@@ -396,6 +427,9 @@ export const WebviewContainer: React.FC<WebviewContainerProps> = ({
 
     el.removeEventListener('will-navigate', handleWillNavigate);
     el.addEventListener('will-navigate', handleWillNavigate);
+
+    el.removeEventListener('console-message', handleConsoleMessage);
+    el.addEventListener('console-message', handleConsoleMessage);
   };
 
   const activeServiceObj = services.find((s) => s.id === activeServiceId);
