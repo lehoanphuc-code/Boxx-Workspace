@@ -14,7 +14,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openExternalLink: (url: string) => ipcRenderer.invoke('open-external-link', url),
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),
   checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
-  restartAndInstallUpdate: () => ipcRenderer.invoke('restart-and-install-update'),
+  downloadUpdate: (version: string) => ipcRenderer.invoke('download-update', version),
+  restartAndInstallUpdate: (targetPath?: string) => ipcRenderer.invoke('restart-and-install-update', targetPath),
   onAutoUpdateStatus: (callback: Function) => {
     ipcRenderer.on('auto-update-status', (_, data) => callback(data));
   },

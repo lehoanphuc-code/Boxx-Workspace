@@ -16,6 +16,21 @@ namespace BoxxWorkspace
                 string tempDir = Path.Combine(Path.GetTempPath(), "BoxxWorkspaceApp");
                 string exePath = Path.Combine(tempDir, "Boxx Workspace.exe");
 
+                // Kill existing Boxx Workspace process if active to allow clean extraction of new version
+                try
+                {
+                    Process currentProc = Process.GetCurrentProcess();
+                    foreach (Process p in Process.GetProcessesByName("Boxx Workspace"))
+                    {
+                        if (p.Id != currentProc.Id)
+                        {
+                            p.Kill();
+                            p.WaitForExit(1500);
+                        }
+                    }
+                }
+                catch { }
+
                 Directory.CreateDirectory(tempDir);
                 Assembly asm = Assembly.GetExecutingAssembly();
                 using (Stream stream = asm.GetManifestResourceStream("payload.zip"))
@@ -38,10 +53,7 @@ namespace BoxxWorkspace
                                     {
                                         entry.ExtractToFile(destinationPath, overwrite: true);
                                     }
-                                    catch
-                                    {
-                                        // Ignore locked active DLLs/EXEs if app is already open
-                                    }
+                                    catch { }
                                 }
                             }
                         }

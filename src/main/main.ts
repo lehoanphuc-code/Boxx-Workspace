@@ -423,8 +423,76 @@ function isVersionNewer(latest: string, current: string): boolean {
     }
   });
 
-  ipcMain.handle('restart-and-install-update', () => {
-    autoUpdater.quitAndInstall(false, true);
+  let isDownloadingUpdate = false;
+
+  ipcMain.handle('download-update', async (_, version: string) => {
+    if (isDownloadingUpdate) return;
+    isDownloadingUpdate = true;
+
+    const https = require('https');
+    const fs = require('fs');
+    const path = require('path');
+
+    const downloadUrl = `https://github.com/lehoanphuc-code/Boxx-Workspace/releases/download/v${version}/Boxx-Workspace.exe`;
+    const updateExePath = path.join(app.getPath('temp'), `Boxx-Workspace-v${version}.exe`);
+
+    const downloadFile = (url: string) => {
+      https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0' } }, (res: any) => {
+        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          return downloadFile(res.headers.location);
+        }
+
+        const totalSize = parseInt(res.headers['content-length'] || '0', 10);
+        let downloaded = 0;
+        const fileStream = fs.createWriteStream(updateExePath);
+
+        res.on('data', (chunk: any) => {
+          downloaded += chunk.length;
+          fileStream.write(chunk);
+          if (totalSize > 0) {
+            const percent = Math.floor((downloaded / totalSize) * 100);
+            mainWindow?.webContents.send('auto-update-status', {
+              status: 'downloading',
+              percent,
+              version
+            });
+          }
+        });
+
+        res.on('end', () => {
+          fileStream.end();
+          isDownloadingUpdate = false;
+          mainWindow?.webContents.send('auto-update-status', {
+            status: 'ready',
+            version,
+            exePath: updateExePath,
+            message: `🚀 Bản v${version} đã tải xong 100%! Bấm để Khởi chạy ngay.`
+          });
+        });
+      }).on('error', (err: any) => {
+        isDownloadingUpdate = false;
+        mainWindow?.webContents.send('auto-update-status', {
+          status: 'error',
+          message: '❌ Lỗi tải file cập nhật. Vui lòng thử lại.'
+        });
+      });
+    };
+
+    downloadFile(downloadUrl);
+  });
+
+  ipcMain.handle('restart-and-install-update', (_, targetPath?: string) => {
+    const fs = require('fs');
+    const { spawn } = require('child_process');
+    
+    if (targetPath && fs.existsSync(targetPath)) {
+      spawn(targetPath, [], { detached: true, stdio: 'ignore' }).unref();
+      app.quit();
+    } else {
+      if (app.isPackaged) {
+        autoUpdater.quitAndInstall(false, true);
+      }
+    }
   });
 
   // Select File Dialog

@@ -60,6 +60,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [updateCheckStatus, setUpdateCheckStatus] = useState<string>('idle');
   const [updateCheckMessage, setUpdateCheckMessage] = useState<string>('');
   const [appVersion, setAppVersion] = useState<string>('1.0.1');
+  const [targetVersion, setTargetVersion] = useState<string>('');
+  const [downloadedExePath, setDownloadedExePath] = useState<string>('');
 
   useEffect(() => {
     if (window.electronAPI?.getAppVersion) {
@@ -75,14 +77,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         if (data.status === 'available') {
           setIsCheckingUpdate(false);
           setUpdateCheckStatus('available');
-          setUpdateCheckMessage(`🎉 Phát hiện bản v${data.version || ''}! Đang tự động tải ngầm...`);
+          if (data.version) setTargetVersion(data.version);
+          setUpdateCheckMessage(`🎉 Phát hiện bản v${data.version || ''}! Bấm nút bên dưới để Tải & Cập nhật.`);
+          // Trigger download automatically
+          if (data.version && window.electronAPI?.downloadUpdate) {
+            window.electronAPI.downloadUpdate(data.version);
+          }
         } else if (data.status === 'downloading') {
           setUpdateCheckStatus('downloading');
-          setUpdateCheckMessage(`📥 Đang tải bản mới ngầm... (${data.percent || 0}%)`);
+          setUpdateCheckMessage(`📥 Đang tải ngầm bản mới v${data.version || ''}... (${data.percent || 0}%)`);
         } else if (data.status === 'ready') {
           setIsCheckingUpdate(false);
           setUpdateCheckStatus('ready');
-          setUpdateCheckMessage(`🚀 Bản v${data.version || ''} đã sẵn sàng! Bấm nút bên dưới để cập nhật.`);
+          if (data.exePath) setDownloadedExePath(data.exePath);
+          setUpdateCheckMessage(data.message || `🚀 Bản v${data.version || ''} đã tải xong! Bấm để Khởi chạy lại & Cập nhật.`);
         } else if (data.status === 'latest') {
           setIsCheckingUpdate(false);
           setUpdateCheckStatus('latest');
@@ -90,7 +98,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         } else if (data.status === 'error') {
           setIsCheckingUpdate(false);
           setUpdateCheckStatus('latest');
-          setUpdateCheckMessage(`✅ Bạn đang sử dụng phiên bản mới nhất (v${appVersion})!`);
+          setUpdateCheckMessage(data.message || `✅ Bạn đang sử dụng phiên bản mới nhất (v${appVersion})!`);
         }
       });
     }
@@ -506,18 +514,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <div className="shrink-0 flex flex-col items-end gap-2">
                   {updateCheckStatus === 'ready' ? (
                     <button
-                      onClick={() => window.electronAPI?.restartAndInstallUpdate()}
+                      onClick={() => window.electronAPI?.restartAndInstallUpdate(downloadedExePath)}
                       className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-emerald-600/30 flex items-center gap-1.5 animate-pulse"
                     >
                       <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      Khởi chạy lại & Cập nhật
+                      Khởi chạy lại & Cập nhật {targetVersion ? `v${targetVersion}` : ''}
+                    </button>
+                  ) : updateCheckStatus === 'downloading' ? (
+                    <button
+                      disabled
+                      className="px-3.5 py-2 bg-indigo-700 opacity-90 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      Đang tải {targetVersion ? `v${targetVersion}` : ''}...
                     </button>
                   ) : updateCheckStatus === 'available' ? (
                     <button
-                      onClick={() => window.electronAPI?.openExternalLink('https://github.com/lehoanphuc-code/Boxx-Workspace/releases/latest/download/Boxx-Workspace.exe')}
+                      onClick={() => targetVersion && window.electronAPI?.downloadUpdate(targetVersion)}
                       className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-emerald-600/30 flex items-center gap-1.5"
                     >
-                      🚀 Tải Cập nhật (.EXE)
+                      📥 Tải & Cập nhật {targetVersion ? `v${targetVersion}` : ''}
                     </button>
                   ) : (
                     <button

@@ -40,6 +40,7 @@ export interface UpdateStatus {
   version?: string;
   percent?: number;
   message?: string;
+  exePath?: string;
 }
 
 export interface ElectronAPI {
@@ -56,7 +57,8 @@ export interface ElectronAPI {
   openExternalLink: (url: string) => Promise<boolean>;
   getAppVersion: () => Promise<string>;
   checkForUpdates: () => Promise<any>;
-  restartAndInstallUpdate: () => Promise<void>;
+  downloadUpdate: (version: string) => Promise<void>;
+  restartAndInstallUpdate: (targetPath?: string) => Promise<void>;
   onAutoUpdateStatus: (callback: (data: UpdateStatus) => void) => void;
 }
 
