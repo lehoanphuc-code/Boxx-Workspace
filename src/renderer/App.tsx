@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Sparkles } from 'lucide-react';
 import { Sidebar } from './components/Sidebar';
 import { WebviewContainer, ServiceItem } from './components/WebviewContainer';
 import { AICopilotPanel } from './components/AICopilotPanel';
@@ -38,10 +38,27 @@ export const App: React.FC = () => {
     { id: 'transferit', name: 'Transfer.it', url: 'https://transfer.it/', partition: 'persist:transferit' },
   ];
 
-  // Initial Data Loading
+  // Initial Data Loading & Auto Update Listener
   useEffect(() => {
     loadSettings();
     loadTasks();
+
+    if (window.electronAPI?.onAutoUpdateStatus) {
+      window.electronAPI.onAutoUpdateStatus((status) => {
+        if (status.status === 'available' || status.status === 'downloading' || status.status === 'ready') {
+          setUpdateStatus(status);
+        }
+      });
+    }
+
+    // Auto check for update 3s after launch
+    const timer = setTimeout(() => {
+      if (window.electronAPI?.checkForUpdates) {
+        window.electronAPI.checkForUpdates();
+      }
+    }, 3000);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const loadSettings = async () => {
@@ -242,38 +259,90 @@ export const App: React.FC = () => {
         onReload={handleReloadCurrentWebview}
       />
 
-      {/* Floating Auto-Update Notification Banner */}
+      {/* Floating Modern Update Popup Modal */}
       {updateStatus && (updateStatus.status === 'available' || updateStatus.status === 'downloading' || updateStatus.status === 'ready') && (
-        <div className="fixed top-4 right-6 z-50 bg-slate-900/95 border border-indigo-500/80 shadow-2xl rounded-2xl p-4 flex items-center gap-4 backdrop-blur-xl text-xs max-w-md animate-bounce-short">
-          <div className="w-10 h-10 rounded-xl bg-indigo-600/30 flex items-center justify-center text-indigo-400 shrink-0">
-            <RefreshCw className={`w-5 h-5 ${updateStatus.status === 'downloading' ? 'animate-spin text-indigo-400' : 'text-emerald-400'}`} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md">
+          <div className="bg-slate-900 border border-indigo-500/50 shadow-2xl rounded-2xl w-full max-w-md overflow-hidden relative p-6 space-y-5">
+            {/* Header Icon & Tag */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-600/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400">
+                  <Sparkles className="w-6 h-6 animate-pulse text-indigo-300" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-base text-white">Cập nhật Boxx Workspace</h3>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">
+                      v{updateStatus.version || ''}
+                    </span>
+                  </div>
+                  <p className="text-xs text-indigo-300/80">Phát hiện phiên bản phát hành mới trên GitHub</p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setUpdateStatus(null)}
+                className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Progress / Status Message */}
+            <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800/80 space-y-3">
+              <p className="text-xs text-slate-300 leading-relaxed">
+                {updateStatus.status === 'ready'
+                  ? `🚀 Bản v${updateStatus.version || ''} đã được tải về sẵn sàng 100%! Bấm nút bên dưới để Khởi chạy lại & Cập nhật ngay.`
+                  : updateStatus.status === 'downloading'
+                  ? `📥 Đang tự động tải ngầm bản mới v${updateStatus.version || ''}... (${updateStatus.percent || 0}%)`
+                  : `🎉 Phát hiện bản phát hành mới v${updateStatus.version || ''}! Hãy nâng cấp ngay để trải nghiệm các cải tiến mới nhất.`}
+              </p>
+
+              {updateStatus.status === 'downloading' && (
+                <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                  <div
+                    className="bg-indigo-500 h-full transition-all duration-300"
+                    style={{ width: `${updateStatus.percent || 0}%` }}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                onClick={() => setUpdateStatus(null)}
+                className="px-4 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              >
+                Để Sau
+              </button>
+
+              {updateStatus.status === 'ready' ? (
+                <button
+                  onClick={() => window.electronAPI?.restartAndInstallUpdate(updateStatus.exePath)}
+                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-emerald-600/30 transition-all flex items-center gap-2 animate-pulse"
+                >
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  Khởi chạy lại & Cập nhật
+                </button>
+              ) : updateStatus.status === 'downloading' ? (
+                <button
+                  disabled
+                  className="px-5 py-2.5 bg-indigo-700 opacity-90 text-white font-bold rounded-xl text-xs flex items-center gap-2"
+                >
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  Đang tải ({updateStatus.percent || 0}%)
+                </button>
+              ) : (
+                <button
+                  onClick={() => updateStatus.version && window.electronAPI?.downloadUpdate(updateStatus.version)}
+                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-indigo-600/30 transition-all flex items-center gap-2"
+                >
+                  📥 Tải & Cập nhật v{updateStatus.version || ''}
+                </button>
+              )}
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <h4 className="font-bold text-white flex items-center gap-2">
-              {updateStatus.status === 'ready' && '🚀 Đã sẵn sàng cập nhật bản mới!'}
-              {updateStatus.status === 'downloading' && `📥 Đang tải bản cập nhật ngầm... (${updateStatus.percent || 0}%)`}
-              {updateStatus.status === 'available' && `🎉 Đã tìm thấy bản cập nhật v${updateStatus.version || ''}!`}
-            </h4>
-            <p className="text-[11px] text-slate-400 truncate">
-              {updateStatus.status === 'ready'
-                ? 'Nhấn nút để khởi động lại và trải nghiệm phiên bản mới.'
-                : `Phiên bản mới v${updateStatus.version || ''} đang được nạp.`}
-            </p>
-          </div>
-          {updateStatus.status === 'ready' && (
-            <button
-              onClick={() => window.electronAPI?.restartAndInstallUpdate()}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3 py-2 rounded-xl text-xs transition-colors shrink-0 shadow-lg shadow-indigo-600/30"
-            >
-              Cập nhật ngay
-            </button>
-          )}
-          <button
-            onClick={() => setUpdateStatus(null)}
-            className="text-slate-500 hover:text-slate-300 text-xs p-1"
-          >
-            ✕
-          </button>
         </div>
       )}
     </div>
