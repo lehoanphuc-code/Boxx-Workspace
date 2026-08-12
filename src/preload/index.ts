@@ -19,4 +19,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onAutoUpdateStatus: (callback: Function) => {
     ipcRenderer.on('auto-update-status', (_, data) => callback(data));
   },
+  onLinkOpenedLog: (callback: Function) => {
+    ipcRenderer.on('link-opened-log', (_, data) => callback(data));
+  },
 });

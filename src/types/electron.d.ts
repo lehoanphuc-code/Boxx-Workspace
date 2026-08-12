@@ -60,6 +60,7 @@ export interface ElectronAPI {
   downloadUpdate: (version: string) => Promise<void>;
   restartAndInstallUpdate: (targetPath?: string) => Promise<void>;
   onAutoUpdateStatus: (callback: (data: UpdateStatus) => void) => void;
+  onLinkOpenedLog: (callback: (data: { url: string; browser: string }) => void) => void;
 }
 
 declare global {

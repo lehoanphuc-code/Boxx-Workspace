@@ -20,6 +20,7 @@ export const App: React.FC = () => {
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
+  const [linkToast, setLinkToast] = useState<{ url: string; browser: string } | null>(null);
 
   const reloadFnRef = useRef<(() => void) | null>(null);
   const getTextFnRef = useRef<(() => Promise<string>) | null>(null);
@@ -48,6 +49,13 @@ export const App: React.FC = () => {
         if (status.status === 'available' || status.status === 'downloading' || status.status === 'ready') {
           setUpdateStatus(status);
         }
+      });
+    }
+
+    if (window.electronAPI?.onLinkOpenedLog) {
+      window.electronAPI.onLinkOpenedLog((data) => {
+        setLinkToast(data);
+        setTimeout(() => setLinkToast(null), 4000);
       });
     }
 
@@ -258,6 +266,20 @@ export const App: React.FC = () => {
         onOpenSettings={() => setIsSettingsOpen(true)}
         onReload={handleReloadCurrentWebview}
       />
+
+      {/* Floating Link Opened Visual Toast Indicator */}
+      {linkToast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-emerald-950/90 border border-emerald-500/80 shadow-2xl rounded-2xl px-5 py-3 flex items-center gap-3 backdrop-blur-md animate-fade-in text-xs max-w-lg">
+          <span className="text-emerald-400 font-bold text-base">🔗</span>
+          <div className="flex-1 min-w-0">
+            <h4 className="font-bold text-white truncate">Đã mở liên kết ngoài trên {linkToast.browser === 'msedge' ? 'Microsoft Edge' : linkToast.browser}</h4>
+            <p className="text-[11px] text-emerald-200/80 truncate">{linkToast.url}</p>
+          </div>
+          <button onClick={() => setLinkToast(null)} className="text-emerald-400 hover:text-white p-1">
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Floating Modern Update Popup Modal */}
       {updateStatus && (updateStatus.status === 'available' || updateStatus.status === 'downloading' || updateStatus.status === 'ready') && (
