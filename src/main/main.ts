@@ -332,37 +332,56 @@ function applyCleanHeadersToSession(ses: Electron.Session) {
 }
 
 // Helper to open link in preferred external browser
-function openUrlInPreferredBrowser(url: string) {
-  if (!url || typeof url !== 'string') return;
-  const cleanUrl = url.trim();
+function openUrlInPreferredBrowser(rawUrl: string) {
+  if (!rawUrl || typeof rawUrl !== 'string') return;
+  let cleanUrl = rawUrl.trim();
+
+  try {
+    const parsed = new URL(cleanUrl);
+    // Unwrap Zalo, Facebook, Google link wrapper redirects (e.g. l.zalo.me/g/... or l.facebook.com/l.php?u=... or google.com/url?q=...)
+    const sp = parsed.searchParams;
+    const rawTarget = sp.get('u') || sp.get('url') || sp.get('q') || sp.get('target') || sp.get('dest');
+    if (rawTarget && (rawTarget.startsWith('http://') || rawTarget.startsWith('https://'))) {
+      cleanUrl = rawTarget.trim();
+    }
+  } catch {}
+
   if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) return;
 
   const settings = loadSettings();
   const browser = settings.preferredBrowser || 'default';
 
   try {
-    const { execFile } = require('child_process');
+    const { exec } = require('child_process');
     if (browser === 'msedge') {
-      execFile('cmd.exe', ['/c', 'start', '', 'msedge', cleanUrl], (err: any) => {
-        if (err) shell.openExternal(cleanUrl);
+      exec(`start msedge "${cleanUrl}"`, (err: any) => {
+        if (err) {
+          const edgePath = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
+          if (fs.existsSync(edgePath)) {
+            exec(`"${edgePath}" "${cleanUrl}"`, (err2: any) => {
+              if (err2) shell.openExternal(cleanUrl);
+            });
+          } else {
+            shell.openExternal(cleanUrl);
+          }
+        }
       });
     } else if (browser === 'chrome') {
-      execFile('cmd.exe', ['/c', 'start', '', 'chrome', cleanUrl], (err: any) => {
+      exec(`start chrome "${cleanUrl}"`, (err: any) => {
         if (err) shell.openExternal(cleanUrl);
       });
     } else if (browser === 'firefox') {
-      execFile('cmd.exe', ['/c', 'start', '', 'firefox', cleanUrl], (err: any) => {
+      exec(`start firefox "${cleanUrl}"`, (err: any) => {
         if (err) shell.openExternal(cleanUrl);
       });
     } else if (browser === 'brave') {
-      execFile('cmd.exe', ['/c', 'start', '', 'brave', cleanUrl], (err: any) => {
+      exec(`start brave "${cleanUrl}"`, (err: any) => {
         if (err) shell.openExternal(cleanUrl);
       });
     } else {
       shell.openExternal(cleanUrl);
     }
   } catch (err) {
-    console.error('Failed to open external browser:', err);
     shell.openExternal(cleanUrl);
   }
 }
