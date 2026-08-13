@@ -636,7 +636,12 @@ function isVersionNewer(latest: string, current: string): boolean {
     const { spawn } = require('child_process');
     
     if (targetPath && fs.existsSync(targetPath)) {
-      spawn(targetPath, [], { detached: true, stdio: 'ignore' }).unref();
+      // Pass '/S' flag for silent background installation (0-click upgrade like VS Code / Teams)
+      const isSetup = targetPath.toLowerCase().includes('setup') || targetPath.endsWith('.exe');
+      const args = isSetup ? ['/S'] : [];
+
+      const child = spawn(targetPath, args, { detached: true, stdio: 'ignore' });
+      child.unref();
       app.quit();
     } else {
       if (app.isPackaged) {
