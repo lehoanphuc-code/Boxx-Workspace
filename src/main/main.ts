@@ -538,13 +538,25 @@ function isVersionNewer(latest: string, current: string): boolean {
     const fs = require('fs');
     const path = require('path');
 
-    const downloadUrl = `https://github.com/lehoanphuc-code/Boxx-Workspace/releases/download/v${version}/Boxx-Workspace.exe`;
-    const updateExePath = path.join(app.getPath('temp'), `Boxx-Workspace-v${version}.exe`);
+    // Try downloading the lightweight Setup installer first, fallback to main executable
+    const downloadUrl = `https://github.com/lehoanphuc-code/Boxx-Workspace/releases/download/v${version}/Boxx-Workspace-Setup-v${version}.exe`;
+    const fallbackUrl = `https://github.com/lehoanphuc-code/Boxx-Workspace/releases/download/v${version}/Boxx-Workspace.exe`;
+    const updateExePath = path.join(app.getPath('temp'), `Boxx-Workspace-Setup-v${version}.exe`);
 
-    const downloadFile = (url: string) => {
-      https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0' } }, (res: any) => {
+    const downloadFile = (targetUrl: string, attemptCount = 0) => {
+      const options = {
+        headers: { 'User-Agent': 'Mozilla/5.0' },
+        timeout: 25000 // 25s socket packet timeout
+      };
+
+      const req = https.get(targetUrl, options, (res: any) => {
         if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-          return downloadFile(res.headers.location);
+          return downloadFile(res.headers.location, attemptCount);
+        }
+
+        if (res.statusCode === 404 && targetUrl !== fallbackUrl) {
+          console.log('Setup file not found, falling back to main exe url...');
+          return downloadFile(fallbackUrl, attemptCount);
         }
 
         const totalSize = parseInt(res.headers['content-length'] || '0', 10);
@@ -553,9 +565,8 @@ function isVersionNewer(latest: string, current: string): boolean {
 
         res.on('data', (chunk: any) => {
           downloaded += chunk.length;
-          fileStream.write(chunk);
           if (totalSize > 0) {
-            const percent = Math.floor((downloaded / totalSize) * 100);
+            const percent = Math.min(100, Math.floor((downloaded / totalSize) * 100));
             mainWindow?.webContents.send('auto-update-status', {
               status: 'downloading',
               percent,
@@ -564,21 +575,55 @@ function isVersionNewer(latest: string, current: string): boolean {
           }
         });
 
-        res.on('end', () => {
-          fileStream.end();
-          isDownloadingUpdate = false;
-          mainWindow?.webContents.send('auto-update-status', {
-            status: 'ready',
-            version,
-            exePath: updateExePath,
-            message: `🚀 Bản v${version} đã tải xong 100%! Bấm để Khởi chạy ngay.`
+        // Use native stream piping for 100% reliable backpressure handling!
+        res.pipe(fileStream);
+
+        fileStream.on('finish', () => {
+          fileStream.close(() => {
+            isDownloadingUpdate = false;
+            mainWindow?.webContents.send('auto-update-status', {
+              status: 'ready',
+              version,
+              exePath: updateExePath,
+              message: `🚀 Bản v${version} đã tải xong 100%! Bấm để Khởi chạy ngay.`
+            });
           });
         });
-      }).on('error', (err: any) => {
+
+        fileStream.on('error', (err: any) => {
+          console.error('File stream write error:', err);
+          fs.unlink(updateExePath, () => {});
+          isDownloadingUpdate = false;
+          mainWindow?.webContents.send('auto-update-status', {
+            status: 'error',
+            version,
+            message: `❌ Lỗi ghi file: ${err.message}`
+          });
+        });
+      });
+
+      req.on('timeout', () => {
+        req.destroy();
+        if (attemptCount < 2) {
+          console.log('Download socket timeout, retrying attempt', attemptCount + 1);
+          downloadFile(targetUrl, attemptCount + 1);
+        } else {
+          isDownloadingUpdate = false;
+          mainWindow?.webContents.send('auto-update-status', {
+            status: 'error',
+            version,
+            message: '❌ Tải xuống bị chậm/quá thời hạn mạng.'
+          });
+        }
+      });
+
+      req.on('error', (err: any) => {
+        console.error('Download http error:', err);
         isDownloadingUpdate = false;
         mainWindow?.webContents.send('auto-update-status', {
           status: 'error',
-          message: '❌ Lỗi tải file cập nhật. Vui lòng thử lại.'
+          version,
+          message: `❌ Lỗi mạng khi tải: ${err.message}`
         });
       });
     };

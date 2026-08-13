@@ -331,38 +331,47 @@ export const App: React.FC = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center justify-end gap-3 pt-2">
+            <div className="flex items-center justify-between pt-2">
               <button
-                onClick={() => setUpdateStatus(null)}
-                className="px-4 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                onClick={() => window.electronAPI?.openExternalLink(`https://github.com/lehoanphuc-code/Boxx-Workspace/releases/tag/v${updateStatus.version || ''}`)}
+                className="text-[11px] font-medium text-indigo-400 hover:text-indigo-300 underline underline-offset-4 flex items-center gap-1"
               >
-                Để Sau
+                🌐 Tải trên Trình duyệt
               </button>
 
-              {updateStatus.status === 'ready' ? (
+              <div className="flex items-center gap-2">
                 <button
-                  onClick={() => window.electronAPI?.restartAndInstallUpdate(updateStatus.exePath)}
-                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-emerald-600/30 transition-all flex items-center gap-2 animate-pulse"
+                  onClick={() => setUpdateStatus(null)}
+                  className="px-4 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
                 >
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  Khởi chạy lại & Cập nhật
+                  Để Sau
                 </button>
-              ) : updateStatus.status === 'downloading' ? (
-                <button
-                  disabled
-                  className="px-5 py-2.5 bg-indigo-700 opacity-90 text-white font-bold rounded-xl text-xs flex items-center gap-2"
-                >
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  Đang tải ({updateStatus.percent || 0}%)
-                </button>
-              ) : (
-                <button
-                  onClick={() => updateStatus.version && window.electronAPI?.downloadUpdate(updateStatus.version)}
-                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-indigo-600/30 transition-all flex items-center gap-2"
-                >
-                  📥 Tải & Cập nhật v{updateStatus.version || ''}
-                </button>
-              )}
+
+                {updateStatus.status === 'ready' ? (
+                  <button
+                    onClick={() => window.electronAPI?.restartAndInstallUpdate(updateStatus.exePath)}
+                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-emerald-600/30 transition-all flex items-center gap-2 animate-pulse"
+                  >
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    Khởi chạy lại & Cập nhật
+                  </button>
+                ) : updateStatus.status === 'downloading' ? (
+                  <button
+                    disabled
+                    className="px-5 py-2.5 bg-indigo-700 opacity-90 text-white font-bold rounded-xl text-xs flex items-center gap-2"
+                  >
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    Đang tải ({updateStatus.percent || 0}%)
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => updateStatus.version && window.electronAPI?.downloadUpdate(updateStatus.version)}
+                    className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-indigo-600/30 transition-all flex items-center gap-2"
+                  >
+                    📥 Tải & Cập nhật v{updateStatus.version || ''}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
