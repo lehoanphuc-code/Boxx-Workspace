@@ -383,6 +383,14 @@ export const WebviewContainer: React.FC<WebviewContainerProps> = ({
               const origOpen = window.open;
               window.open = function(url, target, features) {
                 if (url && typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'))) {
+                  try {
+                    const targetHost = new URL(url).hostname;
+                    const authDomains = ['accounts.google.com', 'login.microsoftonline.com', 'login.live.com', 'auth.zalo.me', 'id.zalo.me', 'appleid.apple.com'];
+                    const isAuth = authDomains.some(function(d) { return targetHost.includes(d); });
+                    if (isAuth) {
+                      return origOpen ? origOpen.apply(this, arguments) : null;
+                    }
+                  } catch(e) {}
                   console.log('__BOXX_OPEN_EXTERNAL__:' + url);
                   return null;
                 }
@@ -404,8 +412,19 @@ export const WebviewContainer: React.FC<WebviewContainerProps> = ({
                 try {
                   const targetHost = new URL(href).hostname;
                   const currentHost = window.location.hostname;
-                  const cleanCurrent = currentHost.replace(/^(web|chat|app)\./, '');
+                  
+                  // Exempt Auth & Login Domains (Google Sign-In, Microsoft Login, Zalo Auth...)
+                  const authDomains = ['accounts.google.com', 'login.microsoftonline.com', 'login.live.com', 'auth.zalo.me', 'id.zalo.me', 'appleid.apple.com'];
+                  const isAuth = authDomains.some(function(d) { return targetHost.includes(d); });
+                  if (isAuth) return;
 
+                  // Check parent domain matching (e.g. mail.google.com to accounts.google.com or google.com)
+                  const getParentDomain = function(h) { return h.split('.').slice(-2).join('.'); };
+                  if (getParentDomain(targetHost) === getParentDomain(currentHost) && anchor.target !== '_blank') {
+                    return;
+                  }
+
+                  const cleanCurrent = currentHost.replace(/^(web|chat|app)\./, '');
                   if (!targetHost.includes(cleanCurrent) || anchor.target === '_blank') {
                     e.preventDefault();
                     e.stopPropagation();

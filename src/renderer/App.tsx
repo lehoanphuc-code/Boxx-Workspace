@@ -33,7 +33,7 @@ export const App: React.FC = () => {
     { id: 'telegram', name: 'Telegram Web', url: 'https://web.telegram.org/k/', partition: 'persist:telegram' },
     { id: 'whatsapp', name: 'WhatsApp Web', url: 'https://web.whatsapp.com/', partition: 'persist:whatsapp' },
     { id: 'teams', name: 'Microsoft Teams', url: 'https://teams.live.com/v2', partition: 'persist:teams' },
-    { id: 'mail', name: 'Mail / Gmail', url: 'https://mail.google.com/', partition: 'persist:mail' },
+    { id: 'mail', name: 'Mail / Gmail', url: 'https://mail.google.com/mail/u/0/', partition: 'persist:mail' },
     { id: 'chatgpt', name: 'ChatGPT Web', url: 'https://chatgpt.com/', partition: 'persist:chatgpt' },
     { id: 'geminiweb', name: 'Gemini Web Chat', url: 'https://gemini.google.com/', partition: 'persist:geminiweb' },
     { id: 'transferit', name: 'Transfer.it', url: 'https://transfer.it/', partition: 'persist:transferit' },
