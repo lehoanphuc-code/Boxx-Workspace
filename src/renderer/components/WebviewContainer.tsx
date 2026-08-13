@@ -396,6 +396,11 @@ export const WebviewContainer: React.FC<WebviewContainerProps> = ({
                 const href = anchor.href || anchor.getAttribute('href');
                 if (!href || href.startsWith('javascript:') || href.startsWith('#')) return;
 
+                // Exempt native file downloads, blob URLs, data URLs, or download attributes
+                if (href.startsWith('blob:') || href.startsWith('data:') || anchor.hasAttribute('download')) {
+                  return;
+                }
+
                 try {
                   const targetHost = new URL(href).hostname;
                   const currentHost = window.location.hostname;

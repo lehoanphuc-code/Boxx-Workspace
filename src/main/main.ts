@@ -196,9 +196,51 @@ const CHROME_USER_AGENT =
 const FIREFOX_USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:134.0) Gecko/20100101 Firefox/134.0';
 
+// Helper to setup native file download handler
+function setupSessionDownloadHandler(ses: Electron.Session) {
+  try {
+    ses.removeAllListeners('will-download');
+    ses.on('will-download', (event, item, webContents) => {
+      const fileName = item.getFilename();
+      const userDownloadsPath = app.getPath('downloads');
+      const targetSavePath = path.join(userDownloadsPath, fileName);
+
+      const targetWindow = BrowserWindow.fromWebContents(webContents) || mainWindow;
+
+      const savePath = dialog.showSaveDialogSync(targetWindow!, {
+        title: `Lưu tệp ${fileName}`,
+        defaultPath: targetSavePath,
+        properties: ['showOverwriteConfirmation']
+      });
+
+      if (savePath) {
+        item.setSavePath(savePath);
+
+        item.once('done', (_, state) => {
+          if (state === 'completed') {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.send('link-opened-log', {
+                url: `📁 Đã tải xong file "${fileName}" vào ${savePath}`,
+                browser: 'Downloads'
+              });
+            }
+          } else {
+            console.error(`Download state: ${state}`);
+          }
+        });
+      } else {
+        item.cancel();
+      }
+    });
+  } catch (err) {
+    console.error('Failed to attach download handler:', err);
+  }
+}
+
 // Helper to apply clean headers to session partitions
 function applyCleanHeadersToSession(ses: Electron.Session) {
   ses.setUserAgent(CHROME_USER_AGENT);
+  setupSessionDownloadHandler(ses);
   try {
     ses.webRequest.onBeforeSendHeaders((details, callback) => {
       const url = details.url.toLowerCase();
@@ -219,7 +261,7 @@ function applyCleanHeadersToSession(ses: Electron.Session) {
   }
 }
 
-  applyCleanHeadersToSession(session.defaultSession);
+applyCleanHeadersToSession(session.defaultSession);
 
   const STRICT_AUTH_DOMAINS = [
     'accounts.google.com',
