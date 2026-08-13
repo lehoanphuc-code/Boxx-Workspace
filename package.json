@@ -1,13 +1,13 @@
 {
   "name": "boxx",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "description": "Boxx - All-in-One Multi-Chat Workspace with Google Gemini AI Copilot",
   "main": "main.js",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build && tsc -p tsconfig.electron.json",
     "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && tsc -p tsconfig.electron.json && electron .\"",
-    "electron:build": "npm run build && npx electron-packager . \"Boxx Workspace\" --platform=win32 --arch=x64 --out=dist_build --overwrite --ignore=\"^/(dist_app|dist_build|dist_single_exe|release|\\.git|src)\" && tar -a -c -f dist_build/Boxx-Workspace-v%npm_package_version%.zip -C \"dist_build/Boxx Workspace-win32-x64\" . && C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe /target:winexe /r:System.IO.Compression.dll /r:System.IO.Compression.FileSystem.dll /r:System.Windows.Forms.dll /resource:dist_build\\Boxx-Workspace-v%npm_package_version%.zip,payload.zip /out:dist_build\\Boxx-Workspace.exe BoxxLauncher.cs"
+    "electron:build": "npm run build && npx electron-builder --win nsis && copy dist_build\\Boxx-Workspace-Setup-v1.1.4.exe dist_build\\Boxx-Workspace.exe"
   },
   "keywords": [
     "chat",
@@ -50,7 +50,7 @@
     "appId": "com.antigravity.boxx",
     "productName": "Boxx Workspace",
     "directories": {
-      "output": "dist_single_exe"
+      "output": "dist_build"
     },
     "files": [
       "main.js",
@@ -60,11 +60,19 @@
     ],
     "win": {
       "target": [
-        "portable"
-      ]
+        "nsis"
+      ],
+      "artifactName": "Boxx-Workspace-Setup-v${version}.${ext}"
     },
-    "portable": {
-      "artifactName": "Boxx-Workspace.exe"
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "Boxx Workspace",
+      "uninstallDisplayName": "Boxx Workspace",
+      "runAfterFinish": true,
+      "perMachine": false
     }
   }
 }
