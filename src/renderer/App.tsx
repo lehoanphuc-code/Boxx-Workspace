@@ -36,6 +36,9 @@ export const App: React.FC = () => {
     { id: 'mail', name: 'Mail / Gmail', url: 'https://mail.google.com/mail/u/0/', partition: 'persist:mail' },
     { id: 'chatgpt', name: 'ChatGPT Web', url: 'https://chatgpt.com/', partition: 'persist:chatgpt' },
     { id: 'geminiweb', name: 'Gemini Web Chat', url: 'https://gemini.google.com/', partition: 'persist:geminiweb' },
+    { id: 'facebook', name: 'Facebook', url: 'https://www.facebook.com/', partition: 'persist:facebook' },
+    { id: 'instagram', name: 'Instagram', url: 'https://www.instagram.com/', partition: 'persist:instagram' },
+    { id: 'youtube', name: 'YouTube', url: 'https://www.youtube.com/', partition: 'persist:youtube' },
     { id: 'transferit', name: 'Transfer.it', url: 'https://transfer.it/', partition: 'persist:transferit' },
   ];
 

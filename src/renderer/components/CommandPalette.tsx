@@ -128,6 +128,36 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       },
     },
     {
+      id: 'facebook',
+      title: 'Mở Facebook Web',
+      category: 'Chat Apps',
+      icon: <MessageSquare className="w-4 h-4 text-blue-500" />,
+      action: () => {
+        onSelectService('facebook');
+        onClose();
+      },
+    },
+    {
+      id: 'instagram',
+      title: 'Mở Instagram Web',
+      category: 'Chat Apps',
+      icon: <MessageSquare className="w-4 h-4 text-pink-400" />,
+      action: () => {
+        onSelectService('instagram');
+        onClose();
+      },
+    },
+    {
+      id: 'youtube',
+      title: 'Mở YouTube',
+      category: 'Chat Apps',
+      icon: <MessageSquare className="w-4 h-4 text-red-500" />,
+      action: () => {
+        onSelectService('youtube');
+        onClose();
+      },
+    },
+    {
       id: 'transferit',
       title: 'Mở Transfer.it File Share',
       category: 'Chat Apps',

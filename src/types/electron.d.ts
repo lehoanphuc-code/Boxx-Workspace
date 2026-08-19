@@ -16,6 +16,9 @@ export interface AppSettings {
     chatgpt: boolean;
     geminiweb: boolean;
     transferit: boolean;
+    facebook: boolean;
+    instagram: boolean;
+    youtube: boolean;
   };
 }
 

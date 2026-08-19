@@ -50,6 +50,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     chatgpt: true,
     geminiweb: true,
     transferit: true,
+    facebook: true,
+    instagram: true,
+    youtube: true,
   });
 
   const [testingKey, setTestingKey] = useState(false);
@@ -374,6 +377,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 { id: 'mail', name: 'Mail / Gmail / Outlook', desc: 'Hòm thư điện tử hợp nhất' },
                 { id: 'chatgpt', name: 'ChatGPT Web', desc: 'Giao diện web trực tiếp của OpenAI ChatGPT' },
                 { id: 'geminiweb', name: 'Gemini Web Chat', desc: 'Giao diện web trực tiếp của Google Gemini' },
+                { id: 'facebook', name: 'Facebook', desc: 'Mạng xã hội Facebook Web & Bảng tin' },
+                { id: 'instagram', name: 'Instagram', desc: 'Mạng xã hội Instagram Web & Direct Messages' },
+                { id: 'youtube', name: 'YouTube', desc: 'Xem video, nghe nhạc & giải trí YouTube' },
                 { id: 'transferit', name: 'Transfer.it', desc: 'Dịch vụ chia sẻ tệp tốc độ cao Transfer.it' },
               ].map((serv) => {
                 const isEnabled = enabledServices[serv.id as keyof typeof enabledServices];

@@ -49,6 +49,9 @@ interface StoredSettings {
     chatgpt: boolean;
     geminiweb: boolean;
     transferit: boolean;
+    facebook: boolean;
+    instagram: boolean;
+    youtube: boolean;
   };
 }
 
@@ -69,6 +72,9 @@ const DEFAULT_SETTINGS: StoredSettings = {
     chatgpt: true,
     geminiweb: true,
     transferit: true,
+    facebook: true,
+    instagram: true,
+    youtube: true,
   },
 };
 
@@ -352,7 +358,7 @@ applyCleanHeadersToSession(session.defaultSession);
 
           if (!isStrictAuth) {
             // Check if navigating to an external page
-            const serviceDomains = ['chat.zalo.me', 'messenger.com', 'facebook.com', 'web.telegram.org', 'web.whatsapp.com', 'teams.microsoft.com', 'chatgpt.com', 'gemini.google.com', 'mail.google.com', 'transfer.it'];
+            const serviceDomains = ['chat.zalo.me', 'messenger.com', 'facebook.com', 'web.telegram.org', 'web.whatsapp.com', 'teams.microsoft.com', 'chatgpt.com', 'gemini.google.com', 'mail.google.com', 'transfer.it', 'youtube.com', 'instagram.com'];
             const isMainServiceHost = serviceDomains.some(sd => parsedUrl.hostname.includes(sd));
             
             if (!isMainServiceHost || searchParams.has('u') || searchParams.has('url') || searchParams.has('q')) {
