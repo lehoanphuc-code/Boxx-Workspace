@@ -326,7 +326,10 @@ applyCleanHeadersToSession(session.defaultSession);
             (domain) => parsedUrl.hostname === domain || parsedUrl.hostname.endsWith('.' + domain) || (parsedUrl.hostname + parsedUrl.pathname).includes(domain)
           );
 
-          if (isStrictAuth) {
+          const serviceDomains = ['chat.zalo.me', 'messenger.com', 'facebook.com', 'web.telegram.org', 'web.whatsapp.com', 'teams.microsoft.com', 'chatgpt.com', 'gemini.google.com', 'mail.google.com', 'transfer.it', 'youtube.com', 'youtu.be', 'instagram.com'];
+          const isMainServiceHost = serviceDomains.some(sd => parsedUrl.hostname.includes(sd));
+
+          if (isStrictAuth || (isMainServiceHost && !searchParams.has('u') && !searchParams.has('url') && !searchParams.has('q'))) {
             return { action: 'allow' };
           }
 

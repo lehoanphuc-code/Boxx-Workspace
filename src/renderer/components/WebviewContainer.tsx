@@ -328,6 +328,22 @@ export const WebviewContainer: React.FC<WebviewContainerProps> = ({
       const url = e.url;
       if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
         e.preventDefault();
+        try {
+          const targetHost = new URL(url).hostname;
+          const targetService = services.find((s) => s.id === serviceId);
+          const serviceHost = targetService ? new URL(targetService.url).hostname : '';
+          const cleanServiceHost = serviceHost.replace(/^(web|chat|app|www)\./, '');
+
+          // Allow internal domain navigations in webview
+          const internalDomains = [cleanServiceHost, 'youtube.com', 'youtu.be', 'facebook.com', 'instagram.com', 'zalo.me'];
+          const isInternal = internalDomains.some((d) => d && targetHost.includes(d));
+
+          if (isInternal) {
+            el.loadURL(url);
+            return;
+          }
+        } catch {}
+
         if (window.electronAPI && typeof window.electronAPI.openExternalLink === 'function') {
           window.electronAPI.openExternalLink(url);
         }
@@ -343,9 +359,12 @@ export const WebviewContainer: React.FC<WebviewContainerProps> = ({
       try {
         const targetHost = new URL(url).hostname;
         const serviceHost = new URL(targetService.url).hostname;
-        const cleanServiceHost = serviceHost.replace(/^(web|chat|app)\./, '');
+        const cleanServiceHost = serviceHost.replace(/^(web|chat|app|www)\./, '');
 
-        if (!targetHost.includes(cleanServiceHost)) {
+        const internalDomains = [cleanServiceHost, 'youtube.com', 'youtu.be', 'facebook.com', 'instagram.com', 'accounts.google.com'];
+        const isInternal = internalDomains.some((d) => d && targetHost.includes(d));
+
+        if (!isInternal) {
           e.preventDefault();
           if (window.electronAPI && typeof window.electronAPI.openExternalLink === 'function') {
             window.electronAPI.openExternalLink(url);
@@ -385,9 +404,9 @@ export const WebviewContainer: React.FC<WebviewContainerProps> = ({
                 if (url && typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'))) {
                   try {
                     const targetHost = new URL(url).hostname;
-                    const authDomains = ['accounts.google.com', 'login.microsoftonline.com', 'login.live.com', 'auth.zalo.me', 'id.zalo.me', 'appleid.apple.com'];
-                    const isAuth = authDomains.some(function(d) { return targetHost.includes(d); });
-                    if (isAuth) {
+                    const internalDomains = ['youtube.com', 'youtu.be', 'facebook.com', 'instagram.com', 'accounts.google.com', 'login.microsoftonline.com', 'auth.zalo.me'];
+                    const isInternal = internalDomains.some(function(d) { return targetHost.includes(d); });
+                    if (isInternal) {
                       return origOpen ? origOpen.apply(this, arguments) : null;
                     }
                   } catch(e) {}
@@ -413,19 +432,19 @@ export const WebviewContainer: React.FC<WebviewContainerProps> = ({
                   const targetHost = new URL(href).hostname;
                   const currentHost = window.location.hostname;
                   
-                  // Exempt Auth & Login Domains (Google Sign-In, Microsoft Login, Zalo Auth...)
-                  const authDomains = ['accounts.google.com', 'login.microsoftonline.com', 'login.live.com', 'auth.zalo.me', 'id.zalo.me', 'appleid.apple.com'];
-                  const isAuth = authDomains.some(function(d) { return targetHost.includes(d); });
-                  if (isAuth) return;
+                  // Exempt Auth & Internal Media Domains (YouTube, Instagram, Facebook, Google Sign-In...)
+                  const internalDomains = ['youtube.com', 'youtu.be', 'facebook.com', 'instagram.com', 'accounts.google.com', 'login.microsoftonline.com', 'auth.zalo.me'];
+                  const isInternal = internalDomains.some(function(d) { return targetHost.includes(d); });
+                  if (isInternal) return;
 
-                  // Check parent domain matching (e.g. mail.google.com to accounts.google.com or google.com)
+                  // Check parent domain matching
                   const getParentDomain = function(h) { return h.split('.').slice(-2).join('.'); };
                   if (getParentDomain(targetHost) === getParentDomain(currentHost) && anchor.target !== '_blank') {
                     return;
                   }
 
-                  const cleanCurrent = currentHost.replace(/^(web|chat|app)\./, '');
-                  if (!targetHost.includes(cleanCurrent) || anchor.target === '_blank') {
+                  const cleanCurrent = currentHost.replace(/^(web|chat|app|www)\./, '');
+                  if (!targetHost.includes(cleanCurrent)) {
                     e.preventDefault();
                     e.stopPropagation();
                     console.log('__BOXX_OPEN_EXTERNAL__:' + href);
